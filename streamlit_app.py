@@ -1,65 +1,104 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-from pySmithPlot.SmithPlot import SmithPlot
 
-st.title("Abaque de Smith Interactif avec pySmithPlot")
+# Configuration de la page Streamlit
+st.set_page_config(page_title="Abaque de Smith Interactif", page_icon=":satellite:", layout="wide")
+st.title("Abaque de Smith Interactif pour l'Analyse RF")
+st.markdown("**Un outil puissant pour visualiser et analyser les circuits RF**")
 
-# Paramètres de l'abaque de Smith
-show_circles = st.checkbox("Afficher les cercles de résistance/réactance", value=True)
-show_labels = st.checkbox("Afficher les labels des cercles", value=True)
+# Fonctions utilitaires
+def calculer_gamma(Z, Z0):
+    """Calcule le coefficient de réflexion Gamma."""
+    return (Z - Z0) / (Z + Z0)
 
-# Coefficients de la matrice S
-st.subheader("Coefficients de la matrice S")
-S11 = complex(st.text_input("Entrez S11 (ex: 0.5+0.3j): ", "0.5+0.3j"))
-S12 = complex(st.text_input("Entrez S12 (ex: 0.2+0.1j): ", "0.2+0.1j"))
-S21 = complex(st.text_input("Entrez S21 (ex: 0.8+0.4j): ", "0.8+0.4j"))
-S22 = complex(st.text_input("Entrez S22 (ex: 0.3+0.2j): ", "0.3+0.2j"))
+def calculer_impedance(Gamma, Z0):
+    """Calcule l'impédance Z à partir de Gamma."""
+    return Z0 * (1 + Gamma) / (1 - Gamma)
 
-# Coefficients de réflexion
-st.subheader("Coefficients de réflexion")
-Gamma_L = complex(st.text_input("Entrez Gamma_L (ex: 0.2+0.1j): ", "0.2+0.1j"))
-Gamma_G = complex(st.text_input("Entrez Gamma_G (ex: 0.3+0.2j): ", "0.3+0.2j"))
+def calculer_delta_k(S11, S12, S21, S22):
+    """Calcule Delta et K pour la stabilité."""
+    Delta = (1 - S11 * S22 + S12 * S21) * (1 - S11 * S22 + S12 * S21) - (S11 * S21 * S12 * S22)
+    K = (1 - abs(S11)**2 - abs(S22)**2 + abs(S11 * S22 - S12 * S21)**2) / (2 * abs(S21 * S12))
+    return Delta, K
 
-# Calcul des coefficients de réflexion à l'entrée et à la sortie
-Gamma_in = S11 + (S12 * S21 * Gamma_L) / (1 - S22 * Gamma_L)
-Gamma_out = S22 + (S12 * S21 * Gamma_G) / (1 - S11 * Gamma_G)
+# Paramètres d'entrée
+st.sidebar.header("Paramètres d'entrée")
+Z0 = st.sidebar.number_input("Impédance caractéristique (Z0)", value=50.0)
 
-# Calcul des impédances normalisées
-Z_in = (1 + Gamma_in) / (1 - Gamma_in)
-Z_out = (1 + Gamma_out) / (1 - Gamma_out)
+choix_mode = st.sidebar.radio("Mode de saisie:", ("Impédance (Z)", "Coefficient de réflexion (Γ)"))
 
-# Création de l'abaque de Smith
-sp = SmithPlot(show_circles=show_circles, show_labels=show_labels)
-
-# Trace des points pour les impédances d'entrée et de sortie
-sp.plot_point(Z_in.real, Z_in.imag, label='Impédance d\'entrée', marker='o', color='r')
-sp.plot_point(Z_out.real, Z_out.imag, label='Impédance de sortie', marker='o', color='b')
-
-# Trace des points Gamma_in et Gamma_out
-sp.plot_point(Gamma_in.real, Gamma_in.imag, label='Gamma_in', marker='x', color='r')
-sp.plot_point(Gamma_out.real, Gamma_out.imag, label='Gamma_out', marker='x', color='b')
-
-# Trace du cercle Γin 
-sp.plot_circle(center=S11, radius=abs((S12*S21)/(1-S22*Gamma_L)), label='Cercle Γin', color='r', linestyle='--')
-
-# Trace du cercle Γout 
-sp.plot_circle(center=S22, radius=abs((S12*S21)/(1-S11*Gamma_G)), label='Cercle Γout', color='b', linestyle='--')
-
-
-# Affichage de l'abaque de Smith
-st.pyplot(sp.get_figure())
-
-# Calcul du delta et du K
-Delta = (1 - S11 * S22 + S12 * S21) * (1 - S11 * S22 + S12 * S21) - (S11 * S21 * S12 * S22)
-K = (1 - abs(S11)**2 - abs(S22)**2 + abs(S11 * S22 - S12 * S21)**2) / (2 * abs(S21 * S12))
-
-# Vérification de la stabilité du circuit
-st.write(f"**Delta:** {Delta}")
-st.write(f"**K:** {K}")
-if abs(Delta) > 1 and abs(K) < 1:
-    st.write("**Le circuit est stable inconditionnellement.**")
-elif abs(Delta) > 1 and abs(K) > 1:
-    st.write("**Le circuit est stable conditionnellement.**")
+if choix_mode == "Impédance (Z)":
+    Z_real = st.sidebar.number_input("Partie réelle de Z", value=100.0)
+    Z_imag = st.sidebar.number_input("Partie imaginaire de Z", value=50.0)
+    Gamma = calculer_gamma(complex(Z_real, Z_imag), Z0)
 else:
-    st.write("**Le circuit est instable.**")
+    Gamma_mag = st.sidebar.number_input("Magnitude de Γ", value=0.5, min_value=0.0, max_value=1.0)
+    Gamma_phase = st.sidebar.number_input("Phase de Γ (degrés)", value=45.0)
+    Gamma = Gamma_mag * np.exp(1j * np.deg2rad(Gamma_phase))
+    Z = calculer_impedance(Gamma, Z0)
+
+# Affichage des résultats
+st.subheader("Résultats")
+st.write(f"**Impédance (Z):** {Z:.2f} Ω")
+st.write(f"**Coefficient de réflexion (Γ):** {Gamma:.2f}")
+
+# Tracé de l'abaque de Smith
+fig, ax = plt.subplots(figsize=(8, 8), subplot_kw={'projection': 'polar'})
+
+# Cercles de résistance constante
+for R in np.arange(0, 5.1, 0.5):
+    theta = np.linspace(0, 2 * np.pi, 100)
+    r = R / (R + 1)
+    x = r * np.cos(theta) + (1 - r)
+    y = r * np.sin(theta)
+    ax.plot(theta, np.sqrt(x**2 + y**2), 'k-', linewidth=0.5)
+    if R <= 2.0 :
+        ax.text(np.pi / 2, R/(R+1) + (1-R/(R+1)) , f'R={R:.1f}', ha='center', va='center', fontsize=8)
+
+# Cercles de réactance constante
+for X in np.arange(-5, 5.1, 0.5):
+    theta = np.linspace(0, np.pi, 100) if X > 0 else np.linspace(np.pi, 2 * np.pi, 100)
+    r = 1 / abs(X)
+    x = r * np.cos(theta)
+    y = r * np.sin(theta) + 1 / X if X != 0 else float('inf')
+    ax.plot(theta, np.sqrt(x**2 + y**2), 'k-', linewidth=0.5)
+    if abs(X) <= 2.0 :
+        ax.text(np.pi, 1 / abs(X), f'X={X:.1f}', ha='center', va='center', fontsize=8)
+
+# Point d'impédance
+ax.plot(np.angle(Gamma), abs(Gamma), 'ro', markersize=8, label='Point Z/Γ')
+
+# Configuration de l'abaque
+ax.set_theta_zero_location("N")  # Angle zéro en haut
+ax.set_theta_direction(-1)  # Sens inverse des aiguilles d'une montre
+ax.set_rlim(0, 1.2)  # Limite du rayon
+ax.set_title("Abaque de Smith", fontsize=14)
+ax.grid(True)
+ax.legend()
+
+# Affichage de l'abaque
+st.pyplot(fig)
+
+# Analyse de la stabilité (facultatif)
+st.sidebar.header("Analyse de la stabilité (Optionnel)")
+analyse_stabilite = st.sidebar.checkbox("Activer l'analyse de stabilité")
+
+if analyse_stabilite:
+    st.subheader("Analyse de la stabilité")
+    S11 = complex(st.sidebar.text_input("Entrez S11 (ex: 0.5+0.3j): ", "0.5+0.3j"))
+    S12 = complex(st.sidebar.text_input("Entrez S12 (ex: 0.2+0.1j): ", "0.2+0.1j"))
+    S21 = complex(st.sidebar.text_input("Entrez S21 (ex: 0.8+0.4j): ", "0.8+0.4j"))
+    S22 = complex(st.sidebar.text_input("Entrez S22 (ex: 0.3+0.2j): ", "0.3+0.2j"))
+
+    Delta, K = calculer_delta_k(S11, S12, S21, S22)
+
+    st.write(f"**Delta:** {Delta:.2f}")
+    st.write(f"**K:** {K:.2f}")
+
+    if abs(Delta) > 1 and K > 1:
+        st.write("**Le circuit est stable inconditionnellement.**")
+    elif abs(Delta) > 1 and K < 1:
+        st.write("**Le circuit est stable conditionnellement.**")
+    else:
+        st.write("**Le circuit est instable.**")
