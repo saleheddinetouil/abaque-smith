@@ -42,20 +42,21 @@ def tracer_abaque_smith(S11, S12, S21, S22, Gamma_L, Gamma_G):
     # Trace des cercles de résistance constante
     for R in np.arange(0.1, 2.1, 0.1):
         theta = np.linspace(0, 2 * np.pi, 100)
-        r = (1 - R) / (1 + R)
-        x = r * np.cos(theta)
+        r = R / (R + 1)  # Correction de la formule pour le rayon
+        x = r * np.cos(theta) + (1 - r)  # Décalage du centre du cercle
         y = r * np.sin(theta)
-        ax.plot(theta, y, 'k-', linewidth=0.5)
+        ax.plot(theta, np.sqrt(x**2 + y**2), 'k-', linewidth=0.5)  # Tracé en coordonnées polaires
         ax.text(np.pi / 2, R, f'R={R:.1f}', ha='center', va='center', fontsize=8)
 
     # Trace des cercles de réactance constante
     for X in np.arange(-2, 2.1, 0.2):
         theta = np.linspace(0, 2 * np.pi, 100)
-        r = (1 - X) / (1 + X)
+        r = 1 / np.abs(X)  # Correction de la formule pour le rayon
         x = r * np.cos(theta)
-        y = r * np.sin(theta)
-        ax.plot(theta, y, 'k-', linewidth=0.5)
-        ax.text(np.pi, r, f'X={X:.1f}', ha='center', va='center', fontsize=8)
+        y = r * np.sin(theta) + 1 / X if X != 0 else float('inf')  # Décalage du centre du cercle
+        ax.plot(theta, np.sqrt(x**2 + y**2), 'k-', linewidth=0.5)  # Tracé en coordonnées polaires
+        ax.text(np.pi, 1 / np.abs(X), f'X={X:.1f}', ha='center', va='center', fontsize=8)
+
 
     # Trace des points pour les impédances d'entrée et de sortie
     ax.plot(theta_in, r_in, 'ro-', label='Impédance d\'entrée')
