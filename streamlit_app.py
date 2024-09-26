@@ -48,22 +48,26 @@ fig, ax = plt.subplots(figsize=(8, 8), subplot_kw={'projection': 'polar'})
 
 # Cercles de résistance constante
 for R in np.arange(0, 5.1, 0.5):
-    theta = np.linspace(0, 2 * np.pi, 100)
-    r = R / (R + 1)
-    x = r * np.cos(theta) + (1 - r)
-    y = r * np.sin(theta)
+    center = (R/(R+1), 0) # Correct center calculation for constant resistance circles
+    radius = 1/(R+1)  # Correct radius calculation 
+    theta = np.linspace(0, 2*np.pi, 200)
+    x = center[0] + radius * np.cos(theta)
+    y = center[1] + radius * np.sin(theta)
     ax.plot(theta, np.sqrt(x**2 + y**2), 'k-', linewidth=0.5)
     if R <= 2.0 :
-        ax.text(np.pi / 2, R/(R+1) + (1-R/(R+1)) , f'R={R:.1f}', ha='center', va='center', fontsize=8)
+        ax.text(np.pi/2, R/(R+1), f'R={R:.1f}', ha='center', va='center', fontsize=8)
 
-# Cercles de réactance constante
+# Cercles de réactance constante (arcs)
 for X in np.arange(-5, 5.1, 0.5):
-    theta = np.linspace(0, np.pi, 100) if X > 0 else np.linspace(np.pi, 2 * np.pi, 100)
-    r = 1 / abs(X)
-    x = r * np.cos(theta)
-    y = r * np.sin(theta) + 1 / X if X != 0 else float('inf')
+    center = (1, 1/X) if X != 0 else (1, float('inf')) # Correct center for constant reactance arcs
+    radius = 1/abs(X) if X != 0 else float('inf') # Correct radius
+    start_angle = np.arctan(-1/X) if X != 0 else np.pi/2
+    end_angle = np.arctan(1/X) if X != 0 else 3*np.pi/2
+    theta = np.linspace(start_angle, end_angle, 200)
+    x = center[0] + radius * np.cos(theta)
+    y = center[1] + radius * np.sin(theta)
     ax.plot(theta, np.sqrt(x**2 + y**2), 'k-', linewidth=0.5)
-    if abs(X) <= 2.0 :
+    if abs(X) <= 2.0 and X != 0:
         ax.text(np.pi, 1 / abs(X), f'X={X:.1f}', ha='center', va='center', fontsize=8)
 
 # Point d'impédance
