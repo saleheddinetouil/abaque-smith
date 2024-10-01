@@ -40,7 +40,7 @@ else:
 
 # Affichage des résultats
 st.subheader("Résultats")
-st.write(f"**Impédance (Z):** {Z:.2f} Ω")
+
 st.write(f"**Coefficient de réflexion (Γ):** {Gamma:.2f}")
 
 # Tracé de l'abaque de Smith
