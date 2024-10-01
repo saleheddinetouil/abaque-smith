@@ -36,8 +36,10 @@ else:
     Gamma_mag = st.sidebar.number_input("Magnitude de Γ", value=0.5, min_value=0.0, max_value=1.0)
     Gamma_phase = st.sidebar.number_input("Phase de Γ (degrés)", value=45.0)
     Gamma = Gamma_mag * np.exp(1j * np.deg2rad(Gamma_phase))
-    Z = calculer_impedance(Gamma.conj(), Z0 )
-
+    try:
+        Z = calculer_impedance(Gamma.conj(), Z0 )
+    except ZeroDivisionError:
+        Z = None
 # Affichage des résultats
 st.subheader("Résultats")
 if Z is not None:
