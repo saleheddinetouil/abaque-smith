@@ -27,21 +27,23 @@ st.sidebar.header("Paramètres d'entrée")
 Z0 = st.sidebar.number_input("Impédance caractéristique (Z0)", value=50.0)
 
 choix_mode = st.sidebar.radio("Mode de saisie:", ("Impédance (Z)", "Coefficient de réflexion (Γ)"))
-
+# Affichage des résultats
+st.subheader("Résultats")
 if choix_mode == "Impédance (Z)":
     Z_real = st.sidebar.number_input("Partie réelle de Z", value=100.0)
     Z_imag = st.sidebar.number_input("Partie imaginaire de Z", value=50.0)
     Gamma = calculer_gamma(complex(Z_real, Z_imag), Z0)
+    st.write(f"**Coefficient de réflexion (Γ):** {Gamma:.2f}")
 else:
     Gamma_mag = st.sidebar.number_input("Magnitude de Γ", value=0.5, min_value=0.0, max_value=1.0)
     Gamma_phase = st.sidebar.number_input("Phase de Γ (degrés)", value=45.0)
     Gamma = Gamma_mag * np.exp(1j * np.deg2rad(Gamma_phase))
-    Z = calculer_impedance(Gamma.conj(), Z0)
+    Z = calculer_impedance(Gamma, Z0)
+    st.write(f"**Impédance (Z):** {Z:.2f} Ω")
 
-# Affichage des résultats
-st.subheader("Résultats")
 
-st.write(f"**Coefficient de réflexion (Γ):** {Gamma:.2f}")
+
+
 
 # Tracé de l'abaque de Smith
 fig, ax = plt.subplots(figsize=(8, 8), subplot_kw={'projection': 'polar'})
