@@ -40,11 +40,6 @@ else:
     Gamma = Gamma_mag * np.exp(1j * np.deg2rad(Gamma_phase))
     Z = calculer_impedance(Gamma, Z0)
     st.write(f"**Impédance (Z):** {Z:.2f} Ω")
-
-
-
-
-
 # Tracé de l'abaque de Smith
 fig, ax = plt.subplots(figsize=(8, 8), subplot_kw={'projection': 'polar'})
 
